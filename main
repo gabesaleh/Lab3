@@ -100,3 +100,60 @@ main (int argc, char *argv[])
     //start your code from here
 }
 
+/* Reads as input a pointer to a string holding the next line from the assembly language program
+ * using the fgets() library function to do so. Removes all duplicate spaces, parentheses, and 
+ * commas from it and a pointer to the resulting character string will be returned. Items separated
+ * in this character string separated soley by a single space. 
+ * add $s0, $s1, $s2 --> add $s0 $s1 $s2
+*/
+char *progScanner()
+{
+	return NULL;
+}
+
+/* This function accepts as input the output of progScanner() and returns a pointer to a character
+ * string in which all registernames are converted to numbers
+ * $zero = $0 , $t0 = $8, parser needs to handle either representation
+ * scan up until $, and read whatever is after that. If illegal register detected error reported
+*/
+char *regNumberConverter(char *input)
+{
+	return NULL;
+}
+
+/* This function uses the output of regNumberConverter(). The instruction is returned as an inst
+ * struct with fields for each of the fields of MIPS instructions including: opcode, rs, rt, rd,
+ * Imm. Of course not all of the fields will be present for all instructions. Integers only.
+ * suggestion: use enumeration type to describe opcodes, e.g. enum inst{ADD, ADDI, SUM....etc.}
+ * You can assume that the assembly language instructions will all be in lower case.
+ * Any illegal opcode, immediate field that contains too large of number, missing $, should lead
+ * to an error.
+ * parser() should place the parsed instruction (in struct form) into the linear array that is used
+ * to represent the Instruction Memory
+*/
+struct inst parser()
+{
+	return NULL;
+}
+
+
+
+void IF()
+{
+}
+
+void ID()
+{
+}
+
+void EX()
+{
+}
+
+void MEM()
+{
+}
+
+void WB()
+{
+}
