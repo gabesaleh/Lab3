@@ -54,6 +54,7 @@ struct inst instructions[5000];
 int dataMemory[MAXSIZE];
 
 
+char* regNumberConverter(char *input);
 void IF(int program_count);
 void ID();
 void EX(int programcount);
@@ -143,7 +144,7 @@ main (int argc, char *argv[])
     
     instructions[0] = test;
     
-    IF(pgm_c);
+    /*IF(pgm_c);
     ID();
     EX(pgm_c);
     MEM();
@@ -151,9 +152,10 @@ main (int argc, char *argv[])
     
     for (i=1;i<REG_NUM;i++){
         printf("%ld  ",*mips_reg[i]);
-    }
-    
-    
+    }*/
+    char* testinput = "add $s0 $s1 $$";
+    char* testremove = regNumberConverter(testinput);
+    printf("%s \n", testremove);
     
     //start your code from here
 }
@@ -174,9 +176,22 @@ char *progScanner()
  * $zero = $0 , $t0 = $8, parser needs to handle either representation
  * scan up until $, and read whatever is after that. If illegal register detected error reported
  */
-char *regNumberConverter(char *input)
+char* regNumberConverter(char *input)
 {
-    return NULL;
+    int i;
+    char* reader = input;
+    char* converted = input;
+    
+    char* registers[] = {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp" "ra"}; 
+
+    while(*reader)
+    {
+	*converted = *reader++;
+	converted += (*converted != '$');
+    }
+    
+
+    return converted;
 }
 
 /* This function uses the output of regNumberConverter(). The instruction is returned as an inst
@@ -189,9 +204,10 @@ char *regNumberConverter(char *input)
  * parser() should place the parsed instruction (in struct form) into the linear array that is used
  * to represent the Instruction Memory
  */
+
 /*struct inst parser()
 {
-    return;
+    return NULL;
 }*/
 
 
