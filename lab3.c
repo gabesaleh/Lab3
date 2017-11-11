@@ -151,7 +151,7 @@ int main (int argc, char *argv[])
     for (i=1;i<REG_NUM;i++){
         printf("%ld  ",*mips_reg[i]);
     }*/
-    char testinput[] = "mult $t0 $k0 $sp";
+    char testinput[] = "add $s1 $s2 $s3";
     char* testremove;
     testremove = regNumberConverter(testinput);
     printf("%s \n", testremove);
