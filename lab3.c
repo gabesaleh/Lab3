@@ -48,9 +48,7 @@ struct latch mem_latch; //latch between MEM and WB
 
 
 int counter = 0;
-char *rawInstruction[5000];
-char *cleanInstruction[5000];
-struct inst instructions[5000];
+struct inst instructions[500];
 int dataMemory[MAXSIZE];
 
 
@@ -63,7 +61,7 @@ void WB(long *mips_register[]);
 
 
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
     int sim_mode=0;//mode flag, 1 for single-cycle, 0 for batch
     int c,m,n;
@@ -128,14 +126,14 @@ main (int argc, char *argv[])
     }
      */
     //initialize registers and program counter
-       for (i=0;i<REG_NUM;i++)
+    /*   for (i=0;i<REG_NUM;i++)
         {
             *mips_reg[i]=0;
         }
+    */
     
     
-    
-    struct inst test;
+    /*struct inst test;
     test.opcode = ADD;
     test.rs = 1;
     test.rt = 2;
@@ -143,7 +141,7 @@ main (int argc, char *argv[])
     test.Imm = 0;
     
     instructions[0] = test;
-    
+    */
     /*IF(pgm_c);
     ID();
     EX(pgm_c);
@@ -153,8 +151,9 @@ main (int argc, char *argv[])
     for (i=1;i<REG_NUM;i++){
         printf("%ld  ",*mips_reg[i]);
     }*/
-    char* testinput = "add $s0 $s1 $$";
-    char* testremove = regNumberConverter(testinput);
+    char testinput[] = "mult $t0 $k0 $sp";
+    char* testremove;
+    testremove = regNumberConverter(testinput);
     printf("%s \n", testremove);
     
     //start your code from here
@@ -178,20 +177,65 @@ char *progScanner()
  */
 char* regNumberConverter(char *input)
 {
-    int i;
-    char* reader = input;
-    char* converted = input;
-    
     char* registers[] = {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp" "ra"}; 
-
-    while(*reader)
-    {
-	*converted = *reader++;
-	converted += (*converted != '$');
-    }
+    char* deconstruct[5];
+    char* output1;
+    char* output2;
+    char* output3;
+    char* output4;
+    char* output5;
+    char* outfinal;
+    int i,j=0;
     
+    //remove all $ from input
+    for(i=0; input[i] != '\0'; i++)
+    {
+	if( input[i] != '$')
+		input[j++] = input[i];
+    }
 
-    return converted;
+    input[j] = '\0';
+    char *token = strtok(input, " ");
+    int z = 0;
+    
+    while(token!=NULL)
+    {
+	deconstruct[z] = token;
+	token = strtok(NULL, " ");
+	z++;//length of deconstruct
+    }
+
+    i=1;
+    for(j=0; j<31; j++)//traverse all possible registers
+    {
+	for(int g = 0; g<z; g++)
+	{
+		if(!strcmp(deconstruct[g], registers[j]))
+			sprintf(deconstruct[g], "%d", j);
+	}
+    }
+    output1 = deconstruct[0];
+    output2 = deconstruct[1];
+    output3 = deconstruct[2];
+    strcpy(outfinal, output1);
+    strcat(outfinal, " ");
+    strcat(outfinal, output2);
+    strcat(outfinal, " ");
+    strcat(outfinal, output3);
+    if(z>3)
+    {
+	output4 = deconstruct[3];
+	strcat(outfinal, " ");
+	strcat(outfinal, output4);
+    }
+    if(z>4)
+    {
+	output5 = deconstruct[4];
+	strcat(outfinal, " ");
+	strcat(outfinal, output5);
+    }
+
+    return outfinal;
 }
 
 /* This function uses the output of regNumberConverter(). The instruction is returned as an inst
