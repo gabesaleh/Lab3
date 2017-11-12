@@ -14,6 +14,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+
 //feel free to add here any additional library names you may need
 
 
@@ -186,10 +187,12 @@ main (int argc, char *argv[])
     
     char *progoutpoint = progScanner(input, output);
     
-    strcpy(testinput, progoutpoint);
-    char *regoutput = regNumberConverter(testinput);
+    memcpy(testinput, progoutpoint, 50);
+    char *regoutput = malloc(sizeof(char)*500);
+    
+    regoutput = regNumberConverter(testinput);
     printf("%s\n", regoutput);
-    printStruct(parser(regoutput));
+    //printStruct(parser(regoutput));
     
     
     
@@ -275,6 +278,8 @@ void removeCharacter(char *string, char delimiter)
  */
 char *regNumberConverter(char *input)
 {
+    //char** registers;
+    //registers = malloc(40*sizeof(char*));
     char* registers[] = {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp" "ra"};
     char* deconstruct[5];
     char* output1;
@@ -284,13 +289,13 @@ char *regNumberConverter(char *input)
     char* output5;
     char* outfinal;
     int i = 0;
-    
-    outfinal = malloc(sizeof(char) * 40);
+    int j,g;
+    //outfinal = malloc(sizeof(char) * 40);
     
     
     //remove all $ from input
     
-    removeCharacter(input, '$');
+    /*removeCharacter(input, '$');
     
     char *token = strtok(input, " ");
     int z = 0;
@@ -303,9 +308,9 @@ char *regNumberConverter(char *input)
     }
     
     i=1;
-    for(int j=0; j<31; j++)//traverse all possible registers
+    for(j=0; j<31; j++)//traverse all possible registers
     {
-        for(int g = 0; g<z; g++)
+        for(g = 0; g<z; g++)
         {
             if(!strncmp(deconstruct[g], registers[j], 2))
             {
@@ -324,9 +329,9 @@ char *regNumberConverter(char *input)
     output2 = deconstruct[1];
     output3 = deconstruct[2];
     
+    */
     
-    
-    strcpy(outfinal,output1);
+    /*memcpy(outfinal,output1, 40);
     
     strcat(outfinal, " ");
     strcat(outfinal, output2);
@@ -345,8 +350,8 @@ char *regNumberConverter(char *input)
         strcat(outfinal, " ");
         strcat(outfinal, output5);
     }
-    
-    return outfinal;
+    */
+    return input;
     
 
 }
@@ -366,7 +371,7 @@ struct inst parser(char *input)
 {
     struct inst parserInst;
     char* instruction[5];
-    
+    int i;
     parserInst.op = 0;
     parserInst.rt = 0;
     parserInst.rd = 0;
@@ -385,7 +390,7 @@ struct inst parser(char *input)
     }
     
     
-    for(int i = 0; i < count; i++)
+    for(i = 0; i < count; i++)
     {
         if(i == 0)
         {
