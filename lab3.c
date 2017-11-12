@@ -73,7 +73,7 @@ char *regNumberConverter(char *input);
 void removeCharacter(char *string, char delimiter);
 void printStruct(struct inst instruct);
 
-int main (int argc, char *argv[])
+main (int argc, char *argv[])
 {
     int sim_mode=0;//mode flag, 1 for single-cycle, 0 for batch
     int c,m,n;
@@ -168,14 +168,30 @@ int main (int argc, char *argv[])
         printf("%ld  ",*mips_reg[i]);
     }*/
     
+    //parser(regNumberConverter(progScanner(input, output)));
+    
+    //char testinput[] = "sw 1 2 3";
+    
+   /* char progOutput[] = "add $s1 $s2 $s3";
+    //printf("%s", progOutput);
+    
+    char *regOutput;
+    regOutput = regNumberConverter(progOutput);
+    printf("%s", regOutput);
+    
+    //printStruct(parser(regNumberConverter()));*/
+    
     char testinput[100];
     
+    
     char *progoutpoint = progScanner(input, output);
-	
+    
     strcpy(testinput, progoutpoint);
     char *regoutput = regNumberConverter(testinput);
-    printf("%s\n", regoutput); 
-    parser(regoutput);
+    printf("%s\n", regoutput);
+    printStruct(parser(regoutput));
+    
+    
     
     //start your code from here
 }
@@ -267,6 +283,10 @@ char *regNumberConverter(char *input)
     char* output4;
     char* output5;
     char* outfinal;
+    int i = 0;
+    
+    outfinal = malloc(sizeof(char) * 40);
+    
     
     //remove all $ from input
     
@@ -282,28 +302,37 @@ char *regNumberConverter(char *input)
         z++;//length of deconstruct
     }
     
+    i=1;
     for(int j=0; j<31; j++)//traverse all possible registers
     {
         for(int g = 0; g<z; g++)
         {
             if(!strncmp(deconstruct[g], registers[j], 2))
-                {
-			sprintf(deconstruct[g], "%d", j);
-		}
-	    else if(!strncmp(deconstruct[g], "zero", 4))
-		{
-			sprintf(deconstruct[g], "%d", j);
-		}
-	}	
+            {
+                sprintf(deconstruct[g], "%d", j);
+            }
+            else if(!strncmp(deconstruct[g], "zero", 4))
+            {
+                sprintf(deconstruct[g], "%d", j);
+            }
+        }	
     }
+    
+    
+    
     output1 = deconstruct[0];
     output2 = deconstruct[1];
     output3 = deconstruct[2];
-    strcpy(outfinal, output1);
+    
+    
+    
+    strcpy(outfinal,output1);
+    
     strcat(outfinal, " ");
     strcat(outfinal, output2);
     strcat(outfinal, " ");
     strcat(outfinal, output3);
+    
     if(z>3)
     {
         output4 = deconstruct[3];
@@ -318,6 +347,7 @@ char *regNumberConverter(char *input)
     }
     
     return outfinal;
+    
 
 }
 
@@ -349,6 +379,7 @@ struct inst parser(char *input)
     while(token != NULL)
     {
         instruction[count] = token;
+        //printf("%s \n",instruction[count]);
         token = strtok(NULL, " ");
         count++;
     }
@@ -372,6 +403,7 @@ struct inst parser(char *input)
                 parserInst.op = SW;
             else if(!strcmp(instruction[i], "lw"))
                 parserInst.op = LW;
+            
             
         }
         else if(i == 1)
@@ -400,7 +432,7 @@ struct inst parser(char *input)
             
             else if(strcmp(instruction[0], "lw") == 0 || strcmp(instruction[0], "sw") == 0)
             {
-                parserInst.rs = atoi(instruction[i]);
+                parserInst.Imm = atoi(instruction[i]);
             }
             else
             {
@@ -417,7 +449,7 @@ struct inst parser(char *input)
             
             else if(strcmp(instruction[0], "lw") == 0 || strcmp(instruction[0], "sw") == 0)
             {
-                parserInst.Imm = atoi(instruction[i]);
+                parserInst.rs = atoi(instruction[i]);
             }
             else{
             parserInst.rt = atoi(instruction[i]);
@@ -426,7 +458,7 @@ struct inst parser(char *input)
         
     }
     
-    printStruct(parserInst); 
+    
     return parserInst;
     
 
@@ -438,29 +470,29 @@ void printStruct(struct inst instruct)
     
     switch (instruct.op)
     {
-      case ADD: 
-		opcodeString = "add";
-		break;
+      case ADD:
+            opcodeString = "add";
+            break;
       case ADDI:
-		 opcodeString = "addi";
-		 break;
-      case SUB: 
-		opcodeString = "sub";
-		break;
+            opcodeString = "addi";
+            break;
+      case SUB:
+            opcodeString = "sub";
+            break;
       case MULT:
-		opcodeString = "mult";
-		break;
-      case BEQ: 
-		opcodeString = "beq";
-		break;
-      case SW: 
-		opcodeString = "sw";
-		break;
-      case LW: 
-		opcodeString = "lw";
-		break;
-	default:
-		break;
+            opcodeString = "mult";
+            break;
+      case BEQ:
+            opcodeString = "beq";
+            break;
+      case LW:
+            opcodeString = "lw";
+            break;
+      case SW:
+            opcodeString = "sw";
+            break;
+      default:
+            break;
             
     }
     
