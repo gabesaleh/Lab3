@@ -275,7 +275,41 @@ void removeCharacter(char *string, char delimiter)
  */
 char *regNumberConverter(char *input)
 {
-    char* registers[] = {"zero", "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp" "ra"};
+    char** registers;
+    registers = malloc(40*sizeof(char*));
+    registers[0] = "zero";
+    registers[1] = "at";
+    registers[2] = "v0";
+    registers[3] = "v1";
+    registers[4] = "a0";
+    registers[5] = "a1";
+    registers[6] = "a2";
+    registers[7] = "a3";
+    registers[8] = "t0";
+    registers[9] = "t1";
+    registers[10] = "t2";
+    registers[11] = "t3";
+    registers[12] = "t4";
+    registers[13] = "t5";
+    registers[14] = "t6";
+    registers[15] = "t7";
+    registers[16] = "s0";
+    registers[17] = "s1";
+    registers[18] = "s2";
+    registers[19] = "s3";
+    registers[20] = "s4";
+    registers[21] = "s5";
+    registers[22] = "s6";
+    registers[23] = "s7";
+    registers[24] = "t8";
+    registers[25] = "t9";
+    registers[26] = "k0";
+    registers[27] = "k1";
+    registers[28] = "gp";
+    registers[29] = "sp";
+    registers[30] = "fp";
+    registers[31] = "ra";
+    /*, "at", "v0", "v1", "a0", "a1", "a2", "a3", "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "t8", "t9", "k0", "k1", "gp", "sp", "fp" "ra"};*/
     char* deconstruct[5];
     char* output1;
     char* output2;
@@ -283,7 +317,7 @@ char *regNumberConverter(char *input)
     char* output4;
     char* output5;
     char* outfinal;
-    int i = 0;
+    int i,j,g;
     
     outfinal = malloc(sizeof(char) * 40);
     
@@ -303,9 +337,9 @@ char *regNumberConverter(char *input)
     }
     
     i=1;
-    for(int j=0; j<31; j++)//traverse all possible registers
+    for(j= 0; j<31; j++)//traverse all possible registers
     {
-        for(int g = 0; g<z; g++)
+        for(g=0; g<z; g++)
         {
             if(!strncmp(deconstruct[g], registers[j], 2))
             {
@@ -326,7 +360,7 @@ char *regNumberConverter(char *input)
     
     
     
-    strcpy(outfinal,output1);
+    memcpy(outfinal,output1,40);
     
     strcat(outfinal, " ");
     strcat(outfinal, output2);
@@ -366,6 +400,7 @@ struct inst parser(char *input)
 {
     struct inst parserInst;
     char* instruction[5];
+    int i;
     
     parserInst.op = 0;
     parserInst.rt = 0;
@@ -385,7 +420,7 @@ struct inst parser(char *input)
     }
     
     
-    for(int i = 0; i < count; i++)
+    for(i = 0; i < count; i++)
     {
         if(i == 0)
         {
