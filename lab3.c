@@ -14,7 +14,6 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-
 //feel free to add here any additional library names you may need
 
 
@@ -58,21 +57,23 @@ int dataMemory[MAXSIZE];
 
 
 
-void IF(int program_count);
+void IF(long program_count);
 void ID();
-void EX(int programcount);
-void MEM();
-void WB(long *mips_register[]);
+void EX(long programcount, long mips_register[]);
+void MEM(long mips_register[]);
+void WB(long mips_register[], int cyclescount);
 
 struct inst parser(char *input);
-char *progScanner(FILE *inputfile, FILE *outputfile);
+char *progScanner(FILE *inputfile, FILE *outputfile, int lineNum);
 char *regNumberConverter(char *input);
 
 
 
 //helper fucntions
-void removeCharacter(char *string, char delimiter);
+int removeCharacter(char *string, char delimiter);
 void printStruct(struct inst instruct);
+void illegelRegister(char *reg);
+void printRegs(long *mips_regs[]);
 
 main (int argc, char *argv[])
 {
@@ -82,22 +83,21 @@ main (int argc, char *argv[])
     long *mips_reg[REG_NUM];
     long pgm_c=0;//program counter
     long sim_cycle=0;//simulation cycle counter
+    long instruct_count = 0;
     //define your own counter for the usage of each pipeline stage here
     
     int test_counter=0;
     FILE *input=NULL;
     FILE *output=NULL;
     
-    input=fopen(argv[1],"r");
-    output=fopen(argv[2],"w");
+    printf("The arguments are:");
     
-   // printf("The arguments are:");
-    
-   /* for(i=1;i<argc;i++)
+   for(i=1;i<argc;i++)
     {
         printf("%s ",argv[i]);
     }
     
+    /*
     printf("\n");
     
     if(argc==7)
@@ -130,8 +130,16 @@ main (int argc, char *argv[])
         printf("Usage: ./sim-mips -s m n c input_name output_name (single-sysle mode)\n or \n ./sim-mips -b m n c input_name  output_name(batch mode)\n");
         printf("m,n,c stand for number of cycles needed by multiplication, other operation, and memory access, respectively\n");
         exit(0);
-    }
-    /*if(input==NULL)
+    }*/
+    
+    m=atoi(argv[1]);
+    n=atoi(argv[2]);
+    c=atoi(argv[3]);
+    input=fopen(argv[4],"r");
+    output=fopen(argv[5],"w");
+     
+    
+    if(input==NULL)
     {
         printf("Unable to open input or output file\n");
         exit(0);
@@ -141,50 +149,118 @@ main (int argc, char *argv[])
         printf("Cannot create output file\n");
         exit(0);
     }
-     */
+    
+    
     //initialize registers and program counter
-       /*for (i=0;i<REG_NUM;i++)
-        {
-            *mips_reg[i]=0;
-        }
+    for(i=0;i<REG_NUM;i++)
+    {
+            mips_reg[i]=0;
+    }
+    for(i=0;i<512;i++)
+    {
+        dataMemory[i]=0;
+    }
     
+
+    printRegs(mips_reg);
     
-    
-    struct inst test;
-    test.opcode = ADD;
-    test.rs = 1;
-    test.rt = 2;
-    test.rd = 5;
-    test.Imm = 0;
-    
-    instructions[0] = test;
-    
-    IF(pgm_c);
-    ID();
-    EX(pgm_c);
-    MEM();
-    WB(mips_reg);
-    
-    for (i=1;i<REG_NUM;i++){
-        printf("%ld  ",*mips_reg[i]);
-    }*/
     
     
     char testinput[100];
+    char *progout;
+    int ch;
+    int lines = 0;
     
+    while(!feof(input))
+    {
+        ch = fgetc(input);
+        if(ch == '\n')
+        {
+            lines++;
+        }
+    }
+    fclose(input);
+    fopen(argv[1], "r");
     
-    char *progoutpoint = progScanner(input, output);
+    lines++;
     
-    memcpy(testinput, progoutpoint, 50);
-    char *regoutput = malloc(sizeof(char)*500);
+    for(int b =1; b<lines; b++)
+    {
+        progout = progScanner(input, output, b);
+        memcpy(testinput, progout, 50);
+        char *regoutput = malloc(sizeof(char)*500);
+        
+        regoutput = regNumberConverter(testinput);
+        printf("%s \n", regoutput);
+        instructions[instruct_count] = parser(regoutput);
+        
+        
+        
+        /*if((instructions[instruct_count].op = MULT))
+        {
+            sim_cycle += 4+m;
+        }
+        else if((instructions[instruct_count].op = ADD))
+        {
+            sim_cycle += 4+n;
+        }
+        else if((instructions[instruct_count].op = ADDI))
+        {
+            sim_cycle += 4+n;
+        }
+        else if((instructions[instruct_count].op = SUB))
+        {
+            sim_cycle += 4+n;
+        }
+        else if((instructions[instruct_count].op = LW))
+        {
+            sim_cycle += 4+c;
+        }
+        else if((instructions[instruct_count].op = SW))
+        {
+            sim_cycle += 1+c;
+        }
+        else if((instructions[instruct_count].op = BEQ))
+        {
+            sim_cycle += 3+n;
+        }*/
+        
+        printf("Cycle Number: %ld\n", sim_cycle);
+        instruct_count++;
+        
+        
+        int cyclecount = 0;
+        for(int i = 0; i < 5; i++)
+        {
+            
+            WB(mips_reg, cyclecount);
+            MEM(mips_reg);
+            EX(pgm_c, mips_reg);
+            ID();
+            IF(pgm_c);
+            cyclecount++;
+        }
+        pgm_c++;
+        
+        printRegs(mips_reg);
+    }
+    for(i=0;i<40;i++)
+    {
+        printf("Data %d: %d\n", i, dataMemory[i]);
+    }
     
-    regoutput = regNumberConverter(testinput);
-    printf("%s", regoutput);
-    printStruct(parser(regoutput));
+    fclose(input);
+    fclose(output);
+}
+
+void printRegs(long *mips_regs[])
+{
+    int i = 0;
+    for(i=1;i<REG_NUM;i++)
+    {
+        printf("REG(%d): %ld  \n",i,mips_regs[i]);
+    }
     
-    
-    
-    //start your code from here
 }
 
 /* Reads as input a pointer to a string holding the next line from the assembly language program
@@ -193,11 +269,14 @@ main (int argc, char *argv[])
  * in this character string separated soley by a single space.
  * add $s0, $s1, $s2 --> add $s0 $s1 $s2
  */
-char *progScanner(FILE *inputfile, FILE *outputfile)
+char *progScanner(FILE *inputfile, FILE *outputfile, int lineNum)
 {
     
     char string[100];
     char *errorString = "Can't open file";
+    int rightPCount;
+    int leftPCount;
+    
     
     if(inputfile == NULL)
     {
@@ -205,26 +284,23 @@ char *progScanner(FILE *inputfile, FILE *outputfile)
         return(errorString);
         
     }
+
+        fgets(string,100,inputfile);
     
-    
-    if(fgets(string,100,inputfile)!=NULL)
-    {
+        rightPCount = removeCharacter(string, '(');
+        leftPCount = removeCharacter(string, ')');
+        if(rightPCount != leftPCount)
+        {
+            printf("Mismatching parenthesis!\n");
+            exit(1);
+        }
         
-        removeCharacter(string, '(');
-        removeCharacter(string, ')');
         removeCharacter(string, ',');
         removeCharacter(string, ' ');
         
-        //printf("%s", string);
         
         fprintf(outputfile, "%s", string);
-        
-    }
     
-
-    
-    fclose(inputfile);
-    fclose(outputfile);
     char *pointer = string;
     
     return pointer;
@@ -234,10 +310,11 @@ char *progScanner(FILE *inputfile, FILE *outputfile)
  *   *** used in progScanner to remove '(' ',' and extra spaces ***
  *   returns fixed string
  */
-void removeCharacter(char *string, char delimiter)
+int removeCharacter(char *string, char delimiter)
 {
     char *src, *destination;
-    //int spaceCount = 0;
+    int counter = 0;
+    
     for(src = destination = string; *src != '\0'; src++)
     {
         
@@ -249,13 +326,33 @@ void removeCharacter(char *string, char delimiter)
             else
                 destination++;
         }
+        else if(delimiter == '(')
+        {
+            
+            if(*destination == delimiter)
+            {
+                counter++;
+                
+                *destination = ' ';
+                destination++;
+            }
+            else
+                destination++;
+        }
         
         else if(*destination != delimiter)
         {
                 destination++;
         }
+        else if(*destination == delimiter)
+        {
+            counter++;
+        }
+        
     }
     *destination='\0';
+    return counter;
+    
 }
 
 /* This function accepts as input the output of progScanner() and returns a pointer to a character
@@ -266,7 +363,7 @@ void removeCharacter(char *string, char delimiter)
 char *regNumberConverter(char *input)
 {
     char** registers;
-    registers = malloc(32*sizeof(char*));
+    registers = malloc(40*sizeof(char*));
     registers[0] = "zero";
     registers[1] = "at";
     registers[2] = "v0";
@@ -299,20 +396,20 @@ char *regNumberConverter(char *input)
     registers[29] = "sp";
     registers[30] = "fp";
     registers[31] = "ra";
-    char** deconstruct;
-    
-
-    char* output1 = malloc(sizeof(char)*3);
-    char* output2 = malloc(sizeof(char)*3); 
-    char* output3 = malloc(sizeof(char)*3);
-    char* output4 = malloc(sizeof(char)*3);
-    char* output5 = malloc(sizeof(char)*3);
+   
+    char **deconstruct;
+    deconstruct = malloc(sizeof(char*) * 50);
+    char* output1;
+    char* output2;
+    char* output3;
+    char* output4;
+    char* output5;
     char* outfinal;
     int i,j,g;
-    char* t1 = malloc(sizeof(char)*5); 
-    char* t2 = malloc(sizeof(char)*5);
-    outfinal = malloc(sizeof(char) * 15);
-    deconstruct = malloc(sizeof(char*)*5);
+    
+    outfinal = malloc(sizeof(char) * 40);
+    
+    
     //remove all $ from input
     
     removeCharacter(input, '$');
@@ -326,13 +423,13 @@ char *regNumberConverter(char *input)
         token = strtok(NULL, " ");
         z++;//length of deconstruct
     }
+    
     i=1;
-    for(j=0; j<=31; j++)//traverse all possible registers
+    for(j= 0; j<32; j++)//traverse all possible registers
     {
         for(g=0; g<z; g++)
         {
-            
-	    if(!(strcmp(deconstruct[g], registers[j])))
+            if(!strncmp(deconstruct[g], registers[j], 2))
             {
                 sprintf(deconstruct[g], "%d", j);
             }
@@ -340,7 +437,7 @@ char *regNumberConverter(char *input)
             {
                 sprintf(deconstruct[g], "%d", j);
             }
-	}	
+        }
     }
     
     
@@ -351,7 +448,8 @@ char *regNumberConverter(char *input)
     
     
     
-    strcpy(outfinal,output1);
+    memcpy(outfinal,output1,40);
+    
     strcat(outfinal, " ");
     strcat(outfinal, output2);
     strcat(outfinal, " ");
@@ -391,20 +489,14 @@ struct inst parser(char *input)
     struct inst parserInst;
     char* instruction[5];
     int i;
+    char *ptr;
     
-    parserInst.op = 0;
-    parserInst.rt = 0;
-    parserInst.rd = 0;
-    parserInst.rs = 0;
-    parserInst.Imm = 0;
     
     char *token = strtok(input, " ");
-    
     int count = 0;
     while(token != NULL)
     {
         instruction[count] = token;
-        //printf("%s \n",instruction[count]);
         token = strtok(NULL, " ");
         count++;
     }
@@ -428,45 +520,85 @@ struct inst parser(char *input)
                 parserInst.op = SW;
             else if(!strcmp(instruction[i], "lw"))
                 parserInst.op = LW;
+            else
+            {
+                printf("Illegal instruction!\n");
+                exit(1);
+            }
             
             
         }
         else if(i == 1)
         {
+            strtol(instruction[i], &ptr, 10);
+            /*if(*ptr != '\0' || ptr == instruction[i])
+            {
+                printf("Illegal register!\n");
+                exit(1);
+            }
+            */
             if(strcmp(instruction[0], "addi") == 0 || strcmp(instruction[0], "lw") == 0 || strcmp(instruction[0], "sw") == 0)
             {
+                illegelRegister(instruction[i]);
                 parserInst.rt = atoi(instruction[i]);
             }
             
-            else if(strcmp(instruction[0], "mult") == 0 || strcmp(instruction[0], "beq") == 0)
+            /*else if(strcmp(instruction[0], "mult") == 0)
             {
+                illegelRegister(instruction[i]);
+                parserInst.rd = atoi(instruction[i]);
+            }*/
+            else if(strcmp(instruction[0], "beq") == 0)
+            {
+                illegelRegister(instruction[i]);
                 parserInst.rs = atoi(instruction[i]);
             }
             else
             {
-            parserInst.rd = atoi(instruction[i]);
+                illegelRegister(instruction[i]);
+                parserInst.rd = atoi(instruction[i]);
             }
         }
 
         else if(i == 2)
         {
-            if(strcmp(instruction[0], "mult") == 0 || strcmp(instruction[0], "beq") == 0)
+            strtol(instruction[i], &ptr, 10);
+           /* if(*ptr != '\0' || ptr == instruction[i])
             {
+                printf("Illegal register!\n");
+                exit(1);
+            }
+            */
+            if(strcmp(instruction[0], "mult") == 0)
+            {
+                illegelRegister(instruction[i]);
+                parserInst.rs = atoi(instruction[i]);
+            }
+            else if(strcmp(instruction[0], "beq") == 0)
+            {
+                illegelRegister(instruction[i]);
                 parserInst.rt = atoi(instruction[i]);
             }
-            
             else if(strcmp(instruction[0], "lw") == 0 || strcmp(instruction[0], "sw") == 0)
             {
                 parserInst.Imm = atoi(instruction[i]);
             }
             else
             {
+                illegelRegister(instruction[i]);
             parserInst.rs = atoi(instruction[i]);
             }
         }
         
         else if(i == 3)
         {
+            strtol(instruction[i], &ptr, 10);
+            /*if(*ptr != '\0' || ptr == instruction[i])
+            {
+                printf("Illegal register!\n");
+                exit(1);
+            }
+            */
             if(strcmp(instruction[0], "addi") == 0 || strcmp(instruction[0], "beq") == 0)
             {
                 parserInst.Imm = atoi(instruction[i]);
@@ -474,10 +606,13 @@ struct inst parser(char *input)
             
             else if(strcmp(instruction[0], "lw") == 0 || strcmp(instruction[0], "sw") == 0)
             {
+                illegelRegister(instruction[i]);
                 parserInst.rs = atoi(instruction[i]);
             }
-            else{
-            parserInst.rt = atoi(instruction[i]);
+            else
+            {
+                illegelRegister(instruction[i]);
+                parserInst.rt = atoi(instruction[i]);
             }
         }
         
@@ -487,6 +622,15 @@ struct inst parser(char *input)
     return parserInst;
     
 
+}
+
+void illegelRegister(char *reg)
+{
+    if(atoi(reg) > 31)
+    {
+        printf("Illegal register!\n");
+        exit(1);
+    }
 }
 
 void printStruct(struct inst instruct)
@@ -524,21 +668,23 @@ void printStruct(struct inst instruct)
     printf("Opcode: %s, rs: %d, rt: %d, rd: %d, Imm: %d \n", opcodeString, instruct.rs, instruct.rt, instruct.rd, instruct.Imm);
 }
 
-
-
-
-void IF(int program_count)
+void printMemLatch(struct latch memory_latch)
 {
+    printf("t1: %ld\n", memory_latch.t1);
+}
+
+
+
+void IF(long program_count)
+{
+    
     struct inst curr;
     
     curr=instructions[program_count];
     
-    if_latch.prev = curr;
-
-    if_latch.next = if_latch.prev;
+    if_latch.next = curr;
     
     
-
     
 }
 
@@ -546,16 +692,19 @@ void ID()
 {
     struct inst curr;
     
-    id_latch.next = id_latch.prev;
-    
     curr = if_latch.next;
+    
+    id_latch.next = curr;
+    
+    
     
     id_latch.prev = if_latch.next;
     
     ex_latch.prev = if_latch.next;
+    
 }
 
-void EX(int programcount)
+void EX(long program_count, long mips_register[])
 {
     struct inst curr;
     
@@ -567,46 +716,49 @@ void EX(int programcount)
     
     mem_latch.prev = ex_latch.next;
     
-    if(curr.op == 0)//add
+    
+    if(curr.op == ADD)
     {
-        mem_latch.t1 = curr.rs + curr.rt;
+        mem_latch.t1 = mips_register[curr.rs] + mips_register[curr.rt];
         
     }
     
-    if(curr.op == 1)//addi
+    if(curr.op == ADDI)//addi
     {
-        mem_latch.t1 = curr.rs + curr.Imm;
+        mem_latch.t1 = mips_register[curr.rs] + curr.Imm;
     }
     
-    if(curr.op == 2)//sub
+    if(curr.op == SUB)//sub
     {
-        mem_latch.t1 = curr.rs - curr.rt;
+        mem_latch.t1 = mips_register[curr.rs] - mips_register[curr.rt];
     }
     
-    if(curr.op == 3)//mult
+    if(curr.op == MULT)//mult
     {
-        mem_latch.t1 = curr.rs*curr.rt;
+        mem_latch.t1 = mips_register[curr.rs]*mips_register[curr.rt];
     }
     
-    if(curr.op == 4)//beq
+    if(curr.op == BEQ)//beq
     {
         if(curr.rs == curr.rt)
-            programcount = programcount + 4 + (curr.Imm<<2);
-        ex_latch.t2 = programcount;
+            program_count = program_count + 4 + (curr.Imm<<2);
+        ex_latch.t2 = program_count;
     }
     
-    if(curr.op == 5)//LW
+    if(curr.op == LW)//LW
     {
-        ex_latch.t1 = curr.rs + curr.Imm;
+        ex_latch.t1 = mips_register[curr.rs] + curr.Imm;
     }
     
-    if(curr.op == 6)//SW
+    if(curr.op == SW)//SW
     {
-        ex_latch.t1 = curr.rs + curr.Imm;
+        printMemLatch(ex_latch);
+        ex_latch.t1 = mips_register[curr.rs] + curr.Imm;
     }
+    
 }
 
-void MEM()
+void MEM(long mips_register[])
 {
     struct inst curr;
     
@@ -622,21 +774,35 @@ void MEM()
     }
     else if(curr.op == SW)
     {
-        dataMemory[ex_latch.t1] = curr.rt;
+         dataMemory[ex_latch.t1] = mips_register[curr.rt];
     }
+    
+    
     
 }
 
-void WB(long *mips_register[])
+void WB(long mips_register[], int cyclescount)
 {
     struct inst curr;
     
     curr = mem_latch.next;
-    
-    if ((curr.op != SW) && (curr.op != BEQ))
+    printMemLatch(mem_latch);
+   
+    if(cyclescount>3)
     {
-        mips_register[curr.rd] = &mem_latch.t1;
+        if ((curr.op != SW) && (curr.op != BEQ) && (curr.op != ADDI) && (curr.op != LW))
+        {
+            mips_register[curr.rd] = mem_latch.t1;
+        }
+        else if (curr.op == LW)
+        {
+            mips_register[curr.rt] = mem_latch.t1;
+        }
+        else if(curr.op == ADDI)
+        {
+        
+            mips_register[curr.rt] = mem_latch.t1;
+        }
     }
-    
     
 }
