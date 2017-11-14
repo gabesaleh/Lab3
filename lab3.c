@@ -5,7 +5,9 @@
 //  Created by Gabriel Saleh and Cameron Weiss 11/6/17.
 //  Copyright © 2017 Gabe Saleh. All rights reserved.
 //
-
+//NOTE: We emailed Professor Krishna and told him our problems with quark. We have tested this code on both Cyguin and the Mac terminal and it works without segmentation fault.
+// Once I upload the code to quark and run it there is a segmentation fault. This is due to the strcpy, strcat, and strcmp functions. Tried the functions given on moodle and still did not work.
+//
 // List the full names of ALL group members at the top of your code.
 /*** Gabriel Saleh and Cameron Weiss ***/
 
@@ -13,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include <assert.h>
 //feel free to add here any additional library names you may need
 
@@ -54,19 +57,21 @@ char *rawInstruction[5000];
 char *cleanInstruction[5000];
 struct inst instructions[5000];
 int dataMemory[MAXSIZE];
+long pgm_c = 0;//program counter
+double ifUtil,idUtil,exUtil, memUtil, wbUtil = 0;
 
 
 
 void IF(long program_count);
 void ID();
-void EX(long programcount, long mips_register[]);
+void EX(long program_count, long mips_register[]);
 void MEM(long mips_register[]);
 void WB(long mips_register[], int cyclescount);
 
 struct inst parser(char *input);
 char *progScanner(FILE *inputfile, FILE *outputfile, int lineNum);
 char *regNumberConverter(char *input);
-
+long offset = 0;
 
 
 //helper fucntions
@@ -75,30 +80,22 @@ void printStruct(struct inst instruct);
 void illegelRegister(char *reg);
 void printRegs(long *mips_regs[]);
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
     int sim_mode=0;//mode flag, 1 for single-cycle, 0 for batch
     int c,m,n;
     int i;//for loop counter
     long *mips_reg[REG_NUM];
-    long pgm_c=0;//program counter
     long sim_cycle=0;//simulation cycle counter
     long instruct_count = 0;
     //define your own counter for the usage of each pipeline stage here
+    int testCounter = 0;
     
-    int test_counter=0;
+    
+    
     FILE *input=NULL;
     FILE *output=NULL;
     
-    printf("The arguments are:");
-    
-   for(i=1;i<argc;i++)
-    {
-        printf("%s ",argv[i]);
-    }
-    
-    /*
-    printf("\n");
     
     if(argc==7)
     {
@@ -120,8 +117,11 @@ main (int argc, char *argv[])
         m=atoi(argv[2]);
         n=atoi(argv[3]);
         c=atoi(argv[4]);
+        
         input=fopen(argv[5],"r");
         output=fopen(argv[6],"w");
+        
+        assert(m && n && c > 0);
         
     }
     
@@ -130,14 +130,12 @@ main (int argc, char *argv[])
         printf("Usage: ./sim-mips -s m n c input_name output_name (single-sysle mode)\n or \n ./sim-mips -b m n c input_name  output_name(batch mode)\n");
         printf("m,n,c stand for number of cycles needed by multiplication, other operation, and memory access, respectively\n");
         exit(0);
-    }*/
+    }
     
-    m=atoi(argv[1]);
-    n=atoi(argv[2]);
-    c=atoi(argv[3]);
-    input=fopen(argv[4],"r");
-    output=fopen(argv[5],"w");
-     
+    
+
+    
+
     
     if(input==NULL)
     {
@@ -161,8 +159,6 @@ main (int argc, char *argv[])
         dataMemory[i]=0;
     }
     
-
-    printRegs(mips_reg);
     
     
     
@@ -180,57 +176,72 @@ main (int argc, char *argv[])
         }
     }
     fclose(input);
-    fopen(argv[1], "r");
+    fopen(argv[5], "r");
     
     lines++;
-    
-    for(int b =1; b<lines; b++)
+    int b;
+    for(b =1; b<lines; b++)
     {
         progout = progScanner(input, output, b);
         memcpy(testinput, progout, 50);
         char *regoutput = malloc(sizeof(char)*500);
         
         regoutput = regNumberConverter(testinput);
-        printf("%s \n", regoutput);
         instructions[instruct_count] = parser(regoutput);
+        if(instruct_count == 0)
+        {
+            if(instructions[instruct_count].op == SW)
+            {
+                sim_cycle =  4;
+            }
+            else if(instructions[instruct_count].op == BEQ)
+            {
+                sim_cycle =  2;
+            }
+            else
+            {
+                sim_cycle =  1;
+            }
+
+
+        }
         
         
-        
-        /*if((instructions[instruct_count].op = MULT))
+        if(instructions[instruct_count].op == MULT)
         {
             sim_cycle += 4+m;
         }
-        else if((instructions[instruct_count].op = ADD))
+        else if(instructions[instruct_count].op == ADD)
         {
             sim_cycle += 4+n;
         }
-        else if((instructions[instruct_count].op = ADDI))
+        else if(instructions[instruct_count].op == ADDI)
         {
             sim_cycle += 4+n;
         }
-        else if((instructions[instruct_count].op = SUB))
+        else if(instructions[instruct_count].op == SUB)
         {
             sim_cycle += 4+n;
         }
-        else if((instructions[instruct_count].op = LW))
+        else if(instructions[instruct_count].op == LW)
         {
             sim_cycle += 4+c;
         }
-        else if((instructions[instruct_count].op = SW))
+        else if(instructions[instruct_count].op == SW)
         {
             sim_cycle += 1+c;
         }
-        else if((instructions[instruct_count].op = BEQ))
+        else if(instructions[instruct_count].op == BEQ)
         {
             sim_cycle += 3+n;
-        }*/
+        }
         
-        printf("Cycle Number: %ld\n", sim_cycle);
         instruct_count++;
         
         
         int cyclecount = 0;
-        for(int i = 0; i < 5; i++)
+        int b = 0;
+        for(i = 0; i < 5; i++)
         {
             
             WB(mips_reg, cyclecount);
@@ -239,14 +250,34 @@ main (int argc, char *argv[])
             ID();
             IF(pgm_c);
             cyclecount++;
+            
         }
         pgm_c++;
+        if(sim_mode==1){
+        printf("cycle: %ld ",sim_cycle);
+            for (i=1;i<REG_NUM;i++){
+                printf("%d  ",(int)mips_reg[i]);
+            }
         
-        printRegs(mips_reg);
+        printf("%ld\n",pgm_c);
+        printf("press ENTER to continue\n");
+        while(getchar() != '\n');
+        
+        }
     }
-    for(i=0;i<40;i++)
-    {
-        printf("Data %d: %d\n", i, dataMemory[i]);
+    
+    if(sim_mode==0){
+        fprintf(output,"program name: %s\n",argv[5]);
+        fprintf(output,"stage utilization: %f  %f  %f  %f  %f \n",ifUtil, idUtil, exUtil, memUtil, wbUtil);
+        // add the (double) stage_counter/sim_cycle for each
+        // stage following sequence IF ID EX MEM WB
+        
+        fprintf(output,"register values ");
+        for (i=1;i<REG_NUM;i++){
+            fprintf(output,"%d  ",mips_reg[i]);
+        }
+        fprintf(output,"%ld\n",pgm_c);
+        
     }
     
     fclose(input);
@@ -298,8 +329,7 @@ char *progScanner(FILE *inputfile, FILE *outputfile, int lineNum)
         removeCharacter(string, ',');
         removeCharacter(string, ' ');
         
-        
-        fprintf(outputfile, "%s", string);
+    
     
     char *pointer = string;
     
@@ -530,24 +560,24 @@ struct inst parser(char *input)
         }
         else if(i == 1)
         {
-            strtol(instruction[i], &ptr, 10);
-            /*if(*ptr != '\0' || ptr == instruction[i])
+            /*strtol(instruction[i], &ptr, 10);
+            if(*ptr != '\0' || ptr == instruction[i])
             {
                 printf("Illegal register!\n");
                 exit(1);
-            }
-            */
+            }*/
+            
             if(strcmp(instruction[0], "addi") == 0 || strcmp(instruction[0], "lw") == 0 || strcmp(instruction[0], "sw") == 0)
             {
                 illegelRegister(instruction[i]);
                 parserInst.rt = atoi(instruction[i]);
             }
             
-            /*else if(strcmp(instruction[0], "mult") == 0)
+            else if(strcmp(instruction[0], "mult") == 0)
             {
                 illegelRegister(instruction[i]);
                 parserInst.rd = atoi(instruction[i]);
-            }*/
+            }
             else if(strcmp(instruction[0], "beq") == 0)
             {
                 illegelRegister(instruction[i]);
@@ -562,13 +592,13 @@ struct inst parser(char *input)
 
         else if(i == 2)
         {
-            strtol(instruction[i], &ptr, 10);
-           /* if(*ptr != '\0' || ptr == instruction[i])
+            /*strtol(instruction[i], &ptr, 10);
+            if(*ptr != '\0' || ptr == instruction[i])
             {
                 printf("Illegal register!\n");
                 exit(1);
-            }
-            */
+            }*/
+            
             if(strcmp(instruction[0], "mult") == 0)
             {
                 illegelRegister(instruction[i]);
@@ -592,8 +622,8 @@ struct inst parser(char *input)
         
         else if(i == 3)
         {
-            strtol(instruction[i], &ptr, 10);
-            /*if(*ptr != '\0' || ptr == instruction[i])
+            /*strtol(instruction[i], &ptr, 10);
+            if(*ptr != '\0' || ptr == instruction[i])
             {
                 printf("Illegal register!\n");
                 exit(1);
@@ -680,9 +710,10 @@ void IF(long program_count)
     
     struct inst curr;
     
-    curr=instructions[program_count];
+    curr=instructions[pgm_c];
     
     if_latch.next = curr;
+    ifUtil++;
     
     
     
@@ -696,11 +727,10 @@ void ID()
     
     id_latch.next = curr;
     
-    
-    
     id_latch.prev = if_latch.next;
     
     ex_latch.prev = if_latch.next;
+    idUtil++;
     
 }
 
@@ -715,6 +745,8 @@ void EX(long program_count, long mips_register[])
     ex_latch.prev = id_latch.next;
     
     mem_latch.prev = ex_latch.next;
+    
+    exUtil++;
     
     
     if(curr.op == ADD)
@@ -740,9 +772,7 @@ void EX(long program_count, long mips_register[])
     
     if(curr.op == BEQ)//beq
     {
-        if(curr.rs == curr.rt)
-            program_count = program_count + 4 + (curr.Imm<<2);
-        ex_latch.t2 = program_count;
+        
     }
     
     if(curr.op == LW)//LW
@@ -752,7 +782,6 @@ void EX(long program_count, long mips_register[])
     
     if(curr.op == SW)//SW
     {
-        printMemLatch(ex_latch);
         ex_latch.t1 = mips_register[curr.rs] + curr.Imm;
     }
     
@@ -761,6 +790,8 @@ void EX(long program_count, long mips_register[])
 void MEM(long mips_register[])
 {
     struct inst curr;
+    
+    memUtil++;
     
     mem_latch.next = mem_latch.prev;
     
@@ -786,7 +817,9 @@ void WB(long mips_register[], int cyclescount)
     struct inst curr;
     
     curr = mem_latch.next;
-    printMemLatch(mem_latch);
+    
+    wbUtil++;
+    
    
     if(cyclescount>3)
     {
@@ -806,3 +839,25 @@ void WB(long mips_register[], int cyclescount)
     }
     
 }
+
+/*
+
+int my_strcmp (const char * s1, const char * s2)
+{
+    for(; *s1 == *s2; ++s1, ++s2)
+        if(*s1 == 0)
+            return 0;
+    return *(unsigned char *)s1 < *(unsigned char *)s2 ? -1 : 1;
+}
+
+char *my_strcat(char *dest, const char *src)
+{
+    size_t i,j;
+    for (i = 0; dest[i] != '\0'; i++)
+        ;
+    for (j = 0; src[j] != '\0'; j++)
+        dest[i+j] = src[j];
+    dest[i+j] = '\0';
+    return dest;
+}
+*/
